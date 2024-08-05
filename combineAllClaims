@@ -1,0 +1,166 @@
+Sub CombineAllClaims()
+    ' Worksheet Declarations
+    Dim ws As Worksheet
+    Dim destinationSheet As Worksheet
+    
+    ' Destination Worksheet Formatting Variables
+    Dim ColumnOnePos As Long
+    Dim ColumnTwoPos As Long
+    Dim ColumnThreePos As Long
+    
+    ' Loop/Temporary Variables
+    Dim i As Long
+    Dim j As Long
+    Dim temp As Long
+    Dim previousValue As Long
+    Dim currentValue As Long
+    
+    ' Row and Column Variables
+    Dim updatingColPos As Long
+    Dim updatingRowPos As Long
+    
+    ' Mapping Variables
+    Dim dict As Object
+    Dim croppedName As String
+    Dim monthMap As Object
+    Dim subfixL As String
+    
+    Dim destinationCellStartMappingRow As Long
+    Dim destinationCellEndMappingRow As Long
+
+
+    ' Initialize dictionaries for names and month mappings
+    Set dict = CreateObject("Scripting.Dictionary")
+    Set monthMap = CreateObject("Scripting.Dictionary")
+    
+    
+    
+    
+    
+    
+    ' !!!These following variable needs to be manually changed!!!
+    ' Populate month mappings
+    monthMap.Add "Jan 2024", 4
+    monthMap.Add "Feb 2024", 5
+    monthMap.Add "Mar 2024", 6
+    monthMap.Add "Apr 2024", 7
+    monthMap.Add "May 2024", 8
+    monthMap.Add "Jun 2024", 9
+    
+    ' Change it to the name of the desired destination sheet
+    Set destinationSheet = ThisWorkbook.Sheets("Claims")
+    
+    ' Add month headers to the destination sheet (Change it to the desired month and year in the form of 'mmm yyyy')
+    destinationSheet.Range("A4").Value = "Jan 2024"
+    destinationSheet.Range("A5").Value = "Feb 2024"
+    destinationSheet.Range("A6").Value = "Mar 2024"
+    destinationSheet.Range("A7").Value = "Apr 2024"
+    destinationSheet.Range("A8").Value = "May 2024"
+    destinationSheet.Range("A9").Value = "Jun 2024"
+    
+    ' Starting and ending position of the rows you want to populate in the destination sheet (usually starts at 4 and ends at 3 + number of months recorded)
+    destinationCellStartMappingRow = 4
+    destinationCellEndMappingRow = 9
+        
+    
+    
+    
+    
+    
+    
+    
+    
+    ' Set initial values for columns
+    ColumnOnePos = 2
+    ColumnTwoPos = 2
+    ColumnThreePos = 2
+    
+    ' Loop through each worksheet in the workbook
+    For Each ws In ThisWorkbook.Worksheets
+        ' Skip specific sheets
+        If ws.Name <> "Claims2" And ws.Name <> "Claims" And _
+           ws.Name <> "Salaried>" And ws.Name <> "Salaried Combined>" And _
+           ws.Name <> "Winch>" And ws.Name <> "Kenworth>" And ws.Name <> "Report Metadata" Then
+                 
+           subfixL = Mid(ws.Name, 10, 1)
+            
+            ' MsgBox "The character at the 10th index is: " & subfixL
+            
+            If subfixL = "4" Then
+                croppedName = Mid(ws.Name, 12) + "(Winch)"
+            ElseIf subfixL = "6" Or subfixL = "7" Then
+                croppedName = Mid(ws.Name, 12) + "(Kenworth)"
+            ElseIf subfixL = " " Then
+                croppedName = ws.Name
+            Else
+                croppedName = Mid(ws.Name, 12) + "(Salaried)"
+            End If
+
+            ' Check if the cropped name exists in the dictionary
+            If dict.Exists(croppedName) Then
+                ' Update existing section
+                updatingColPos = dict(croppedName)
+                
+                For i = destinationCellStartMappingRow To destinationCellEndMappingRow
+                    ' Check if the month exists in the month map
+                    If monthMap.Exists(Format(ws.Cells(i - destinationCellStartMappingRow + 10, "A").Value, "mmm yyyy")) Then
+                        updatingRowPos = monthMap(Format(ws.Cells(i - destinationCellStartMappingRow + 10, "A").Value, "mmm yyyy"))
+                        destinationSheet.Cells(updatingRowPos, updatingColPos) = CDbl(destinationSheet.Cells(updatingRowPos, updatingColPos)) + CDbl(ws.Cells(i - destinationCellStartMappingRow + 10, "C"))
+                        destinationSheet.Cells(updatingRowPos, updatingColPos + 1) = CDbl(destinationSheet.Cells(updatingRowPos, updatingColPos + 1)) + CDbl(ws.Cells(i - destinationCellStartMappingRow + 10, "F"))
+                        destinationSheet.Cells(updatingRowPos, updatingColPos + 2) = CDbl(destinationSheet.Cells(updatingRowPos, updatingColPos + 2)) + CDbl(ws.Cells(i - destinationCellStartMappingRow + 10, "H"))
+                        destinationSheet.Cells(updatingRowPos, updatingColPos + 3) = CDbl(destinationSheet.Cells(updatingRowPos, updatingColPos + 3)) + CDbl(ws.Cells(i - destinationCellStartMappingRow + 10, "J"))
+                        destinationSheet.Cells(updatingRowPos, updatingColPos + 4) = CDbl(destinationSheet.Cells(updatingRowPos, updatingColPos + 4)) + CDbl(ws.Cells(i - destinationCellStartMappingRow + 10, "N"))
+                        destinationSheet.Cells(updatingRowPos, updatingColPos + 5) = CDbl(destinationSheet.Cells(updatingRowPos, updatingColPos + 5)) + CDbl(ws.Cells(i - destinationCellStartMappingRow + 10, "R"))
+                        destinationSheet.Cells(updatingRowPos, updatingColPos + 6) = CDbl(destinationSheet.Cells(updatingRowPos, updatingColPos + 6)) + CDbl(ws.Cells(i - destinationCellStartMappingRow + 10, "T"))
+                    End If
+                Next i
+                
+            Else
+                ' Add new section
+                dict.Add croppedName, ColumnOnePos
+                updatingColPos = ColumnOnePos
+                
+                ' Add headers for the new section
+                destinationSheet.Cells(1, ColumnOnePos) = croppedName
+                ColumnOnePos = ColumnOnePos + 7
+                
+                destinationSheet.Cells(2, ColumnTwoPos) = "Paid Claims"
+                ColumnTwoPos = ColumnTwoPos + 5
+                
+                destinationSheet.Cells(2, ColumnTwoPos) = "Medical"
+                ColumnTwoPos = ColumnTwoPos + 2
+                
+                destinationSheet.Cells(3, ColumnThreePos) = "Medical"
+                ColumnThreePos = ColumnThreePos + 1
+                destinationSheet.Cells(3, ColumnThreePos) = "Dental"
+                ColumnThreePos = ColumnThreePos + 1
+                destinationSheet.Cells(3, ColumnThreePos) = "Vision"
+                ColumnThreePos = ColumnThreePos + 1
+                destinationSheet.Cells(3, ColumnThreePos) = "Rx"
+                ColumnThreePos = ColumnThreePos + 1
+                destinationSheet.Cells(3, ColumnThreePos) = "Total"
+                ColumnThreePos = ColumnThreePos + 1
+                
+                destinationSheet.Cells(3, ColumnThreePos) = "Contract"
+                ColumnThreePos = ColumnThreePos + 1
+                destinationSheet.Cells(3, ColumnThreePos) = "Members"
+                ColumnThreePos = ColumnThreePos + 1
+                
+                ' Add data for the new section
+                For i = destinationCellStartMappingRow To destinationCellEndMappingRow
+                    If monthMap.Exists(Format(ws.Cells(i - destinationCellStartMappingRow + 10, "A").Value, "mmm yyyy")) Then
+                        updatingRowPos = monthMap(Format(ws.Cells(i - destinationCellStartMappingRow + 10, "A").Value, "mmm yyyy"))
+                        destinationSheet.Cells(updatingRowPos, updatingColPos) = CDbl(ws.Cells(i - destinationCellStartMappingRow + 10, "C"))
+                        destinationSheet.Cells(updatingRowPos, updatingColPos + 1) = CDbl(ws.Cells(i - destinationCellStartMappingRow + 10, "F"))
+                        destinationSheet.Cells(updatingRowPos, updatingColPos + 2) = CDbl(ws.Cells(i - destinationCellStartMappingRow + 10, "H"))
+                        destinationSheet.Cells(updatingRowPos, updatingColPos + 3) = CDbl(ws.Cells(i - destinationCellStartMappingRow + 10, "J"))
+                        destinationSheet.Cells(updatingRowPos, updatingColPos + 4) = CDbl(ws.Cells(i - destinationCellStartMappingRow + 10, "N"))
+                        destinationSheet.Cells(updatingRowPos, updatingColPos + 5) = CDbl(ws.Cells(i - destinationCellStartMappingRow + 10, "R"))
+                        destinationSheet.Cells(updatingRowPos, updatingColPos + 6) = CDbl(ws.Cells(i - destinationCellStartMappingRow + 10, "T"))
+                    End If
+                Next i
+                
+            End If
+        End If
+    Next ws
+End Sub
