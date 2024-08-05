@@ -1,0 +1,312 @@
+Sub importRawData()
+    ' Worksheet Declarations
+    Dim enrollmentSource As Worksheet
+    Dim claimsSource As Worksheet
+    Dim enrollmentInfo As Worksheet
+    Dim claimsInfo As Worksheet
+    Dim destinationSheet As Worksheet
+    
+    ' Loop/Temporary Variables
+    Dim i As Long
+    Dim j As Long
+    Dim temp As Long
+    Dim previousValue As Long
+    Dim currentValue As Long
+    Dim updatingColPos As Long
+    Dim croppedName As String
+    
+    ' Row Variables
+    Dim startingRowEnrollment As Long
+    Dim endingRowEnrollment As Long
+    Dim startingRowClaims As Long
+    Dim endingRowClaims As Long
+    Dim correspondingRow As Long
+    
+    ' Mapping Variables
+    Dim dict As Object
+    Dim colIndex As Long
+    Dim colMapIndex As Long
+    Dim colName As String
+    Dim dictDentalVision As Object
+    
+    ' Initialize dictionaries
+    Set dict = CreateObject("Scripting.Dictionary")
+    Set dictDentalVision = CreateObject("Scripting.Dictionary")
+    
+    ' Set worksheets
+    Set enrollmentInfo = ThisWorkbook.Sheets("EnrollmentSheet")
+    Set enrollmentSource = ThisWorkbook.Sheets("Enrollment Raw Data")
+    Set claimsInfo = ThisWorkbook.Sheets("ClaimsSheet")
+    Set claimsSource = ThisWorkbook.Sheets("Claims Raw Data")
+    
+    
+    
+    
+    
+    ' Initialize the values for starting and ending rows for enrollment (Which row do you want it to appear on the final sheet)
+    startingRowEnrollment = 1
+    endingRowEnrollment = 6
+    
+    ' Initialize the values for starting and ending rows for claims (Which row do you want it to appear on the final sheet)
+    startingRowClaims = 1
+    endingRowClaims = 6
+    
+    
+    
+    
+    ' Let's first do enrollment information
+    
+    ' Salary HP1A is Plan A
+    dict.Add "HP1A-HERITAGE(Salaried)", "D"
+    ' Salary HP1B is Plan B
+    dict.Add "HP1B-HERITAGE(Salaried)", "H"
+    ' Salary HP1C is Plan C
+    dict.Add "HP1C-HERITAGE(Salaried)", "L"
+    ' Salary HP1A2, HP1AF, HP1AI is Plan HDHP
+    dict.Add "HP1A2-HERITAGE(Salaried)", "T"
+    dict.Add "HP1AF-HERITAGE(Salaried)", "T"
+    dict.Add "HP1AI-HERITAGE(Salaried)", "T"
+    ' Salary OPA, OPB is Plan Dental
+    dict.Add "OPA-OPTIMA(Salaried)", "X"
+    dict.Add "OPB-OPTIMA(Salaried)", "X"
+    ' Salary VIS1 is Plan Vision
+    dict.Add "VIS1-HERITAGE(Salaried)", "AB"
+    
+    ' Kenworth HP1D is Plan A
+    dict.Add "HP1D-HERITAGE(Kenworth)", "AF"
+    ' dict.Add "HP1D-HERITAGE(Kenworth)", "AF"
+    
+    ' Kenworth HP1E is Plan B
+    dict.Add "HP1E-HERITAGE(Kenworth)", "AJ"
+    ' dict.Add "HP1E-HERITAGE(Kenworth)", "AJ"
+    
+    ' Kenworth HP1F is Plan C
+    dict.Add "HP1F-HERITAGE(Kenworth)", "AN"
+    ' dict.Add "HP1F-HERITAGE(Kenworth)", "AN"
+    
+    ' Kenworth VIS is vision
+    dict.Add "VIS3-HERITAGE(Kenworth)", "AR"
+    ' dict.Add "VIS3-HERITAGE(Kenworth)", "AR"
+    
+    ' Winch HP1A is Plan A
+    dict.Add "HP1A-HERITAGE(Winch)", "AV"
+    
+    ' Winch HP1A2, HP1AI is Plan HDHP
+    dict.Add "HP1A2-HERITAGE(Winch)", "BL"
+    dict.Add "HP1AI-HERITAGE(Winch)", "BL"
+    
+    ' Winch HP1B is Plan B
+    dict.Add "HP1B-HERITAGE(Winch)", "AZ"
+    
+    ' Winch HP1C is Plan C
+    dict.Add "HP1C-HERITAGE(Winch)", "BD"
+    
+    ' Winch OPA, OPB is Dental
+    dict.Add "OPA-HERITAGE(Winch)", "BP"
+    dict.Add "OPB-HERITAGE(Winch)", "BP"
+    
+    ' Winch VIS1 is vision
+    dict.Add "VIS1-HERITAGE(Winch)", "BT"
+    
+    
+    ' Clear the sections we want to populate
+    
+    ' Find the right row and column index
+    
+    For i = 0 To 100
+        colIndex = 7 * i + 2
+        colName = enrollmentSource.Cells(1, colIndex).Value
+        
+        If dict.Exists(colName) Then
+            colMapIndex = ColLetterToNumber(dict(colName))
+            
+            ' Perform map operations
+            
+            ' Loop through all the rows that we want to map and clear them
+            For j = startingRowEnrollment To endingRowEnrollment
+                correspondingRow = j
+                enrollmentInfo.Cells(correspondingRow, colMapIndex) = 0
+                enrollmentInfo.Cells(correspondingRow, colMapIndex + 1) = 0
+                enrollmentInfo.Cells(correspondingRow, colMapIndex + 2) = 0
+                enrollmentInfo.Cells(correspondingRow, colMapIndex + 3) = 0
+            Next j
+        End If
+     Next i
+   
+    
+    
+    For i = 0 To 100
+        colIndex = 7 * i + 2
+        colName = enrollmentSource.Cells(1, colIndex).Value
+        
+        If dict.Exists(colName) Then
+            colMapIndex = ColLetterToNumber(dict(colName))
+            
+            ' Perform map operations
+            
+            ' Loop through all the rows that we want to map
+            For j = 0 To (endingRowEnrollment - startingRowEnrollment)
+            
+                ' For each row we looped through, find the corresponding row in the enrollment info sheet
+                correspondingRow = startingRowEnrollment + j
+                
+                ' Maps EE only = Sub Only
+                enrollmentInfo.Cells(correspondingRow, colMapIndex) = enrollmentInfo.Cells(correspondingRow, colMapIndex).Value + enrollmentSource.Cells(j + 3, colIndex).Value
+                
+                ' Maps EE + 1 = Sub & Spouse + Sub & Child
+                enrollmentInfo.Cells(correspondingRow, colMapIndex + 1) = enrollmentInfo.Cells(correspondingRow, colMapIndex + 1).Value + enrollmentSource.Cells(j + 3, colIndex + 1).Value + enrollmentSource.Cells(j + 3, colIndex + 2).Value
+                
+                ' Maps EE + 2 or more = Sub & Children + Family (1C) + Family (2C)
+                enrollmentInfo.Cells(correspondingRow, colMapIndex + 2) = enrollmentInfo.Cells(correspondingRow, colMapIndex + 2).Value + enrollmentSource.Cells(j + 3, colIndex + 3).Value + enrollmentSource.Cells(j + 3, colIndex + 4).Value + enrollmentSource.Cells(j + 3, colIndex + 5).Value
+                
+                ' Maps Total = Total
+                enrollmentInfo.Cells(correspondingRow, colMapIndex + 3) = enrollmentInfo.Cells(correspondingRow, colMapIndex + 3).Value + enrollmentSource.Cells(j + 3, colIndex + 6).Value
+            Next j
+            
+            ' MsgBox "Column name " & colName & " done populating."
+        Else
+            ' MsgBox "Column name " & colName & " not found in dictionary."
+        End If
+     Next i
+     
+     dict.RemoveAll
+     
+     
+     
+     
+     
+     
+     
+     
+     
+     
+    ' Let's do claims information
+    
+    ' Salary HP1A is Plan A
+    dict.Add "HP1A-HERITAGE(Salaried)", "D"
+    ' Salary HP1B is Plan B
+    dict.Add "HP1B-HERITAGE(Salaried)", "F"
+    ' Salary HP1C is Plan C
+    dict.Add "HP1C-HERITAGE(Salaried)", "H"
+    ' Salary HP1G is Plan D
+    dict.Add "HP1G-HERITAGE(Salaried)", "J"
+    
+    ' Salary HP1A2, HP1AF, HP1AI is Plan HDHP
+    dict.Add "HP1A2-HERITAGE(Salaried)", "L"
+    dict.Add "HP1AF-HERITAGE(Salaried)", "L"
+    dict.Add "HP1AI-HERITAGE(Salaried)", "L"
+    ' Salary OPA, OPB is Plan Dental
+    dict.Add "OPA-OPTIMA(Salaried)", "N"
+    dict.Add "OPB-OPTIMA(Salaried)", "N"
+    
+    dictDentalVision.Add "N", True
+    
+    ' Salary VIS1 is Plan Vision
+    dict.Add "VIS1-HERITAGE(Salaried)", "O"
+    dict.Add "XMED-VISION HARDWARE(Salaried)", "O"
+    
+    dictDentalVision.Add "O", True
+    
+    ' Kenworth HP1D is Plan A
+    dict.Add "HP1D-HERITAGE(Kenworth)", "P"
+    
+    ' Kenworth HP1E is Plan B
+    dict.Add "HP1E-HERITAGE(Kenworth)", "R"
+    
+    ' Kenworth HP1F is Plan C
+    dict.Add "HP1F-HERITAGE(Kenworth)", "T"
+    
+    ' Kenworth VIS is vision
+    dict.Add "VIS3-HERITAGE(Kenworth)", "V"
+    dict.Add "XMED-VISION HARDWARE(Kenworth)", "V"
+    
+    dictDentalVision.Add "V", True
+    
+    ' Winch HP1A is Plan A
+    dict.Add "HP1A-HERITAGE(Winch)", "W"
+    
+    ' Winch HP1A2, HP1AI is Plan HDHP
+    dict.Add "HP1A2-HERITAGE(Winch)", "AE"
+    dict.Add "HP1AI-HERITAGE(Winch)", "AE"
+    
+    ' Winch HP1B is Plan B
+    dict.Add "HP1B-HERITAGE(Winch)", "Y"
+    
+    ' Winch HP1C is Plan C
+    dict.Add "HP1C-HERITAGE(Winch)", "AA"
+    
+    ' Winch HP1G is Plan D
+    dict.Add "HP1G-HERITAGE(Winch)", "AE"
+    
+    ' Winch OPA, OPB is Dental
+    dict.Add "OPA-HERITAGE(Winch)", "AG"
+    dict.Add "OPB-HERITAGE(Winch)", "AG"
+    
+    dictDentalVision.Add "AG", True
+    
+    ' Winch VIS1 is vision
+    dict.Add "VIS1-HERITAGE(Winch)", "AH"
+    dict.Add "XMED-VISION HARDWARE(Winch)", "AH"
+    
+    dictDentalVision.Add "AH", True
+     
+    
+    For i = 0 To 100
+            colIndex = 7 * i + 2
+        colName = claimsSource.Cells(1, colIndex).Value
+        
+        If dict.Exists(colName) Then
+            colMapIndex = ColLetterToNumber(dict(colName))
+            
+            ' Perform map operations
+            
+            ' Loop through all the rows that we want to map and clear them
+            For j = startingRowClaims To endingRowClaims
+                correspondingRow = j
+                claimsInfo.Cells(correspondingRow, colMapIndex) = 0
+                claimsInfo.Cells(correspondingRow, colMapIndex + 1) = 0
+            Next j
+        End If
+     Next i
+   
+    
+    
+    For i = 0 To 100
+        colIndex = 7 * i + 2
+        colName = claimsSource.Cells(1, colIndex).Value
+        
+        If dict.Exists(colName) Then
+            colMapIndex = ColLetterToNumber(dict(colName))
+            
+            ' Perform map operations
+            
+            ' Loop through all the rows that we want to map
+            For j = 0 To (endingRowClaims - startingRowClaims)
+            
+                ' For each row we looped through, find the corresponding row in the enrollment info sheet
+                correspondingRow = startingRowClaims + j
+                
+                If dictDentalVision.Exists(colMapIndex) Then
+                    claimsInfo.Cells(correspondingRow, colMapIndex) = claimsInfo.Cells(correspondingRow, colMapIndex).Value + claimsSource.Cells(j + 4, colIndex + 4).Value
+                Else
+                
+                ' Maps Meidcal
+                claimsInfo.Cells(correspondingRow, colMapIndex) = claimsInfo.Cells(correspondingRow, colMapIndex).Value + claimsSource.Cells(j + 4, colIndex).Value + claimsSource.Cells(j + 4, colIndex + 1).Value + claimsSource.Cells(j + 4, colIndex + 2).Value
+                
+                ' Maps Rx
+                claimsInfo.Cells(correspondingRow, colMapIndex + 1) = claimsInfo.Cells(correspondingRow, colMapIndex + 1).Value + claimsSource.Cells(j + 4, colIndex + 3).Value
+                End If
+            Next j
+            
+            ' MsgBox "Column name " & colName & " done populating."
+        Else
+            ' MsgBox "Column name " & colName & " not found in dictionary."
+        End If
+     Next i
+     
+   
+End Sub
+
+Function ColLetterToNumber(colLetter As String) As Long
+    ColLetterToNumber = Range(colLetter & "1").Column
+End Function
