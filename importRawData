@@ -35,9 +35,9 @@ Sub importRawData()
     
     ' Set worksheets
     Set enrollmentInfo = ThisWorkbook.Sheets("EnrollmentSheet")
-    Set enrollmentSource = ThisWorkbook.Sheets("Enrollment Raw Data")
+    Set enrollmentSource = ThisWorkbook.Sheets("EnrollmentRawData")
     Set claimsInfo = ThisWorkbook.Sheets("ClaimsSheet")
-    Set claimsSource = ThisWorkbook.Sheets("Claims Raw Data")
+    Set claimsSource = ThisWorkbook.Sheets("ClaimsRawData")
     
     
     
