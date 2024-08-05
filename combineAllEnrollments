@@ -1,0 +1,143 @@
+Sub combineAllEnrollments()
+Dim ws As Worksheet
+    Dim ColumnOnePos As Long
+    Dim ColumnTwoPos As Long
+    Dim i As Long
+    Dim j As Long
+    Dim previousValue As Long
+    Dim currentValue As Long
+    Dim updatingColPos As Long
+    Dim croppedName As String
+    Dim subfixL As String
+    Dim destinationSheet As Worksheet
+    Dim dict As Object
+    Dim monthMap As Object
+    Dim destinationCellStartMappingRow As Long
+    Dim destinationCellEndMappingRow As Long
+    
+    ' Initialize dictionaries to store names and month mappings
+    Set dict = CreateObject("Scripting.Dictionary")
+    Set monthMap = CreateObject("Scripting.Dictionary")
+    
+    
+    
+    
+    
+    
+    
+    
+    ' !!!These following variable needs to be manually changed!!!
+    
+    ' Populate month mappings (Change it to the desired month and year in the form of 'mmm yyyy')
+    monthMap.Add "Jan 2024", 3
+    monthMap.Add "Feb 2024", 4
+    monthMap.Add "Mar 2024", 5
+    monthMap.Add "Apr 2024", 6
+    monthMap.Add "May 2024", 7
+    monthMap.Add "Jun 2024", 8
+    
+    ' Change it to the name of the desired destination sheet
+    Set destinationSheet = ThisWorkbook.Sheets("Enrollment")
+    
+    ' Add month headers to the destination sheet (Change it to the desired month and year in the form of 'mmm yyyy')
+    destinationSheet.Range("A3").Value = "Jan 2024"
+    destinationSheet.Range("A4").Value = "Feb 2024"
+    destinationSheet.Range("A5").Value = "Mar 2024"
+    destinationSheet.Range("A6").Value = "Apr 2024"
+    destinationSheet.Range("A7").Value = "May 2024"
+    destinationSheet.Range("A8").Value = "Jun 2024"
+    
+    ' Starting and ending position of the rows you want to populate in the destination sheet (usually starts at 3 and ends at 2 + number of months recorded)
+    destinationCellStartMappingRow = 3
+    destinationCellEndMappingRow = 8
+    
+    
+    
+    
+    
+    
+    
+    
+    ' Set initial values for columns
+    ColumnOnePos = 2
+    ColumnTwoPos = 2
+    
+    ' Loop through each worksheet in the workbook
+    For Each ws In ThisWorkbook.Worksheets
+        ' Skip specific sheets
+        If ws.Name <> "Enrollment2" And ws.Name <> "Enrollment" And _
+           ws.Name <> "Salaried>" And ws.Name <> "Salaried Combined>" And _
+           ws.Name <> "Winch>" And ws.Name <> "Kenworth>" And ws.Name <> "Report Metadata" And ws.Name <> "Sheet2" Then
+                 
+            ' Solve casual formatting error
+            If IsEmpty(ws.Cells(8, 3)) Then
+                ws.Columns(3).Delete
+            End If
+            
+            ' Extract the suffix and cropped name
+            subfixL = Mid(ws.Name, 10, 1)
+            
+            MsgBox "The character at the 10th index is: " & subfixL
+            
+            If subfixL = "4" Then
+                croppedName = Mid(ws.Name, 12) + "(Winch)"
+            ElseIf subfixL = "6" Then
+                croppedName = Mid(ws.Name, 12) + "(Kenworth)"
+            Else
+                croppedName = Mid(ws.Name, 12) + "(Salaried)"
+            End If
+            
+            ' Check if the cropped name exists in the dictionary
+            If dict.Exists(croppedName) Then
+                ' Update existing section
+                updatingColPos = dict(croppedName)
+                
+                For i = destinationCellStartMappingRow To destinationCellEndMappingRow
+                    ' Check if the month exists in the month map
+                    If monthMap.Exists(Format(ws.Cells(i - destinationCellStartMappingRow + 8, "A").Value, "mmm yyyy")) Then
+                        updatingRowPos = monthMap(Format(ws.Cells(i - destinationCellStartMappingRow + 8, "A").Value, "mmm yyyy"))
+                        For j = 0 To 6
+                            previousValue = CDbl(destinationSheet.Cells(updatingRowPos, j + updatingColPos))
+                            currentValue = CDbl(ws.Cells(i - destinationCellStartMappingRow + 8, j + 2))
+                            currentValue = currentValue + previousValue
+                            destinationSheet.Cells(updatingRowPos, j + updatingColPos) = currentValue
+                        Next j
+                    End If
+                Next i
+                
+            Else
+                ' Add new section
+                dict.Add croppedName, ColumnOnePos
+                updatingColPos = ColumnOnePos
+                
+                ' Add headers for the new section
+                destinationSheet.Cells(1, ColumnOnePos) = croppedName
+                ColumnOnePos = ColumnOnePos + 7
+                destinationSheet.Cells(2, ColumnTwoPos) = "Subscriber Only"
+                ColumnTwoPos = ColumnTwoPos + 1
+                destinationSheet.Cells(2, ColumnTwoPos) = "Subscriber & Spouse"
+                ColumnTwoPos = ColumnTwoPos + 1
+                destinationSheet.Cells(2, ColumnTwoPos) = "Subscriber & Child"
+                ColumnTwoPos = ColumnTwoPos + 1
+                destinationSheet.Cells(2, ColumnTwoPos) = "Subscriber & Children"
+                ColumnTwoPos = ColumnTwoPos + 1
+                destinationSheet.Cells(2, ColumnTwoPos) = "Family (1 Child)"
+                ColumnTwoPos = ColumnTwoPos + 1
+                destinationSheet.Cells(2, ColumnTwoPos) = "Family (2+ Children)"
+                ColumnTwoPos = ColumnTwoPos + 1
+                destinationSheet.Cells(2, ColumnTwoPos) = "Total"
+                ColumnTwoPos = ColumnTwoPos + 1
+                
+                ' Add data for the new section
+                For i = destinationCellStartMappingRow To destinationCellEndMappingRow
+                    If monthMap.Exists(Format(ws.Cells(i - destinationCellStartMappingRow + 8, "A").Value, "mmm yyyy")) Then
+                        updatingRowPos = monthMap(Format(ws.Cells(i - destinationCellStartMappingRow + 8, "A").Value, "mmm yyyy"))
+                        For j = 0 To 6
+                            destinationSheet.Cells(updatingRowPos, j + updatingColPos) = CDbl(ws.Cells(i - destinationCellStartMappingRow + 8, j + 2))
+                        Next j
+                    End If
+                Next i
+            End If
+        End If
+    Next ws
+End Sub
